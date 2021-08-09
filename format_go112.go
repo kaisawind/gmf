@@ -301,7 +301,7 @@ func (ctx *FmtCtx) WriteHeader() error {
 }
 
 func (ctx *FmtCtx) WritePacket(p *Packet) error {
-	if averr := C.av_interleaved_write_frame(ctx.avCtx, &p.avPacket); averr < 0 {
+	if averr := C.av_interleaved_write_frame(ctx.avCtx, p.avPacket); averr < 0 {
 		return errors.New(fmt.Sprintf("Unable to write packet to '%s': %s", ctx.Filename, AvError(int(averr))))
 	}
 
@@ -309,7 +309,7 @@ func (ctx *FmtCtx) WritePacket(p *Packet) error {
 }
 
 func (ctx *FmtCtx) WritePacketNoBuffer(p *Packet) error {
-	if averr := C.av_write_frame(ctx.avCtx, &p.avPacket); averr < 0 {
+	if averr := C.av_write_frame(ctx.avCtx, p.avPacket); averr < 0 {
 		return errors.New(fmt.Sprintf("Unable to write packet to '%s': %s", ctx.Filename, AvError(int(averr))))
 	}
 
@@ -345,7 +345,7 @@ func (ctx *FmtCtx) GetNextPacket() (*Packet, error) {
 	pkt := NewPacket()
 
 	for {
-		ret := int(C.av_read_frame(ctx.avCtx, &pkt.avPacket))
+		ret := int(C.av_read_frame(ctx.avCtx, pkt.avPacket))
 
 		if AvErrno(ret) == syscall.EAGAIN {
 			time.Sleep(10000 * time.Microsecond)
@@ -371,7 +371,7 @@ func (ctx *FmtCtx) GetNewPackets() chan *Packet {
 		for {
 			p := NewPacket()
 
-			if ret := C.av_read_frame(ctx.avCtx, &p.avPacket); int(ret) < 0 {
+			if ret := C.av_read_frame(ctx.avCtx, p.avPacket); int(ret) < 0 {
 				break
 			}
 

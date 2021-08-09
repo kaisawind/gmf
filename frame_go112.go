@@ -70,7 +70,7 @@ func (f *Frame) Encode(enc *CodecCtx) (*Packet, error) {
 	}
 
 	for {
-		ret := int(C.avcodec_receive_packet(enc.avCodecCtx, &pkt.avPacket))
+		ret := int(C.avcodec_receive_packet(enc.avCodecCtx, pkt.avPacket))
 		if AvErrno(ret) == syscall.EAGAIN {
 			return nil, nil
 		}

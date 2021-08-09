@@ -578,7 +578,7 @@ func (cc *CodecCtx) Decode(pkt *Packet) ([]*Frame, error) {
 	if pkt == nil {
 		ret = int(C.avcodec_send_packet(cc.avCodecCtx, nil))
 	} else {
-		ret = int(C.avcodec_send_packet(cc.avCodecCtx, &pkt.avPacket))
+		ret = int(C.avcodec_send_packet(cc.avCodecCtx, pkt.avPacket))
 	}
 	if ret < 0 {
 		return nil, AvError(ret)
@@ -624,7 +624,7 @@ func (cc *CodecCtx) Encode(frames []*Frame, drain int) ([]*Packet, error) {
 
 		for {
 			pkt := NewPacket()
-			ret = int(C.avcodec_receive_packet(cc.avCodecCtx, &pkt.avPacket))
+			ret = int(C.avcodec_receive_packet(cc.avCodecCtx, pkt.avPacket))
 			if ret < 0 {
 				pkt.Free()
 				break
@@ -648,7 +648,7 @@ func (cc *CodecCtx) Decode2(pkt *Packet) (*Frame, int) {
 	if pkt == nil {
 		ret = int(C.avcodec_send_packet(cc.avCodecCtx, nil))
 	} else {
-		ret = int(C.avcodec_send_packet(cc.avCodecCtx, &pkt.avPacket))
+		ret = int(C.avcodec_send_packet(cc.avCodecCtx, pkt.avPacket))
 	}
 	if ret < 0 {
 		return nil, ret

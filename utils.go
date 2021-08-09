@@ -106,7 +106,7 @@ func Rescale(a, b, c int64) int64 {
 }
 
 func RescaleTs(pkt *Packet, encBase AVRational, stBase AVRational) {
-	C.av_packet_rescale_ts(&pkt.avPacket, C.struct_AVRational(encBase), C.struct_AVRational(stBase))
+	C.av_packet_rescale_ts(pkt.avPacket, C.struct_AVRational(encBase), C.struct_AVRational(stBase))
 }
 
 func GetSampleFmtName(fmt int32) string {

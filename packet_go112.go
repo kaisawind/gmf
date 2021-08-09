@@ -27,28 +27,16 @@ const (
 )
 
 type Packet struct {
-	avPacket C.struct_AVPacket
+	avPacket *C.struct_AVPacket
 }
 
 func NewPacket() *Packet {
 	p := &Packet{}
 
-	C.av_init_packet(&p.avPacket)
-
-	p.avPacket.data = nil
-	p.avPacket.size = 0
-
-	return p
-}
-
-// Init same to NewPacket and av_init_packet
-//   Initialize optional fields of a packet with default values.
-//   Note, this does not touch the data and size members, which have to be
-//   initialized separately.
-func Init() *Packet {
-	p := &Packet{}
-
-	C.av_init_packet(&p.avPacket)
+	p.avPacket = C.av_packet_alloc()
+	if p.avPacket == nil {
+		return nil
+	}
 
 	p.avPacket.data = nil
 	p.avPacket.size = 0
@@ -135,15 +123,22 @@ func (p *Packet) FreeData() *Packet {
 
 func (p *Packet) Clone() *Packet {
 	np := NewPacket()
+	if np == nil {
+		return np
+	}
 
-	C.av_packet_ref(&np.avPacket, &p.avPacket)
+	if C.av_packet_ref(np.avPacket, p.avPacket) != 0 {
+		np.Free()
+	}
 
 	return np
 }
 
 func (p *Packet) Dump() {
-	fmt.Printf("idx: %d\npts: %d\ndts: %d\nsize: %d\nduration:%d\npos:%d\ndata: % x\n", p.StreamIndex(), p.avPacket.pts, p.avPacket.dts, p.avPacket.size, p.avPacket.duration, p.avPacket.pos, C.GoBytes(unsafe.Pointer(p.avPacket.data), 128))
-	fmt.Println("------------------------------")
+	if p.avPacket != nil {
+		fmt.Printf("idx: %d\npts: %d\ndts: %d\nsize: %d\nduration:%d\npos:%d\ndata: % x\n", p.StreamIndex(), p.avPacket.pts, p.avPacket.dts, p.avPacket.size, p.avPacket.duration, p.avPacket.pos, C.GoBytes(unsafe.Pointer(p.avPacket.data), 128))
+		fmt.Println("------------------------------")
+	}
 
 }
 
@@ -153,7 +148,7 @@ func (p *Packet) SetStreamIndex(val int) *Packet {
 }
 
 func (p *Packet) Free() {
-	C.av_packet_unref(&p.avPacket)
+	C.av_packet_unref(p.avPacket)
 }
 
 func (p *Packet) Time(timebase AVRational) int {
