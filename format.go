@@ -1,6 +1,3 @@
-// +build go1.12
-
-// Format.
 package gmf
 
 /*
@@ -82,7 +79,7 @@ const (
 )
 
 type FmtCtx struct {
-	Filename string
+	URL string
 
 	avCtx    *C.struct_AVFormatContext
 	ofmt     *OutputFmt
@@ -140,7 +137,7 @@ func NewOutputCtx(i interface{}, options ...[]Option) (*FmtCtx, error) {
 		return nil, errors.New(fmt.Sprintf("output format is not initialized. Unable to allocate context"))
 	}
 
-	cfilename := C.CString(this.ofmt.Filename)
+	cfilename := C.CString(this.ofmt.URL)
 	defer C.free(unsafe.Pointer(cfilename))
 
 	C.avformat_alloc_output_context2(&this.avCtx, this.ofmt.avOutputFmt, nil, cfilename)
@@ -156,49 +153,49 @@ func NewOutputCtx(i interface{}, options ...[]Option) (*FmtCtx, error) {
 		}
 	}
 
-	this.Filename = this.ofmt.Filename
+	this.URL = this.ofmt.URL
 
 	return this, nil
 }
 
-func NewOutputCtxWithFormatName(filename, format string) (*FmtCtx, error) {
+func NewOutputCtxWithFormatName(url, format string) (*FmtCtx, error) {
 	this := &FmtCtx{streams: make(map[int]*Stream)}
 
-	cfilename := C.CString(filename)
-	defer C.free(unsafe.Pointer(cfilename))
+	cURL := C.CString(url)
+	defer C.free(unsafe.Pointer(cURL))
 
 	cFormat := C.CString(format)
 	defer C.free(unsafe.Pointer(cFormat))
 
-	C.avformat_alloc_output_context2(&this.avCtx, nil, cFormat, cfilename)
+	C.avformat_alloc_output_context2(&this.avCtx, nil, cFormat, cURL)
 
 	if this.avCtx == nil {
 		return nil, errors.New(fmt.Sprintf("unable to allocate context"))
 	}
 
-	this.Filename = filename
+	this.URL = url
 
-	this.ofmt = &OutputFmt{Filename: filename, avOutputFmt: this.avCtx.oformat}
+	this.ofmt = &OutputFmt{URL: url, avOutputFmt: this.avCtx.oformat}
 
 	return this, nil
 }
 
 // Just a helper for NewCtx().OpenInput()
-func NewInputCtx(filename string) (*FmtCtx, error) {
+func NewInputCtx(url string) (*FmtCtx, error) {
 	ctx := NewCtx()
 
 	if ctx.avCtx == nil {
 		return nil, errors.New(fmt.Sprintf("unable to allocate context"))
 	}
 
-	if err := ctx.OpenInput(filename); err != nil {
+	if err := ctx.OpenInput(url); err != nil {
 		return nil, err
 	}
 
 	return ctx, nil
 }
 
-func NewInputCtxWithFormatName(filename, format string) (*FmtCtx, error) {
+func NewInputCtxWithFormatName(url, format string) (*FmtCtx, error) {
 	ctx := NewCtx()
 
 	if ctx.avCtx == nil {
@@ -207,7 +204,7 @@ func NewInputCtxWithFormatName(filename, format string) (*FmtCtx, error) {
 	if err := ctx.SetInputFormat(format); err != nil {
 		return nil, err
 	}
-	if err := ctx.OpenInput(filename); err != nil {
+	if err := ctx.OpenInput(url); err != nil {
 		return nil, err
 	}
 	return ctx, nil
@@ -219,21 +216,21 @@ func (ctx *FmtCtx) SetOptions(options []*Option) {
 	}
 }
 
-func (ctx *FmtCtx) OpenInputWithOption(filename string, inputOptions *Option) error {
+func (ctx *FmtCtx) OpenInputWithOption(url string, inputOptions *Option) error {
 	var (
-		cfilename *C.char
-		options   *C.struct_AVDictionary = inputOptions.Val.(*Dict).avDict
+		cURL    *C.char
+		options *C.struct_AVDictionary = inputOptions.Val.(*Dict).avDict
 	)
 
-	if filename == "" {
-		cfilename = nil
+	if url == "" {
+		cURL = nil
 	} else {
-		cfilename = C.CString(filename)
-		defer C.free(unsafe.Pointer(cfilename))
+		cURL = C.CString(url)
+		defer C.free(unsafe.Pointer(cURL))
 	}
 
-	if averr := C.avformat_open_input(&ctx.avCtx, cfilename, nil, &options); averr < 0 {
-		return errors.New(fmt.Sprintf("Error opening input '%s': %s", filename, AvError(int(averr))))
+	if averr := C.avformat_open_input(&ctx.avCtx, cURL, nil, &options); averr < 0 {
+		return errors.New(fmt.Sprintf("Error opening input '%s': %s", url, AvError(int(averr))))
 	}
 
 	if averr := C.avformat_find_stream_info(ctx.avCtx, nil); averr < 0 {
@@ -243,11 +240,11 @@ func (ctx *FmtCtx) OpenInputWithOption(filename string, inputOptions *Option) er
 	return nil
 }
 
-func (ctx *FmtCtx) OpenInput(filename string) error {
+func (ctx *FmtCtx) OpenInput(url string) error {
 	//Create an empty Option object to pass to the open input
 	inputOptionsDict := NewDict([]Pair{})
 	inputOption := &Option{Key: "input_options", Val: inputOptionsDict}
-	if err := ctx.OpenInputWithOption(filename, inputOption); err != nil {
+	if err := ctx.OpenInputWithOption(url, inputOption); err != nil {
 		return err
 	}
 
@@ -259,7 +256,7 @@ func (ctx *FmtCtx) AddStreamWithCodeCtx(codeCtx *CodecCtx) (*Stream, error) {
 
 	// Create Video stream in output context
 	if ost = ctx.NewStream(codeCtx.Codec()); ost == nil {
-		return nil, fmt.Errorf("unable to create stream in context, filename: %s", ctx.Filename)
+		return nil, fmt.Errorf("unable to create stream in context, filename: %s", ctx.URL)
 	}
 
 	ost.DumpContexCodec(codeCtx)
@@ -284,17 +281,17 @@ func (ctx *FmtCtx) IsGlobalHeader() bool {
 }
 
 func (ctx *FmtCtx) WriteHeader() error {
-	cfilename := &(ctx.avCtx.filename[0])
+	cURL := ctx.avCtx.url
 
 	// If NOFILE flag isn't set and we don't use custom IO, open it
 	if !ctx.IsNoFile() && !ctx.customPb {
-		if averr := C.avio_open(&ctx.avCtx.pb, cfilename, C.AVIO_FLAG_WRITE); averr < 0 {
-			return errors.New(fmt.Sprintf("Unable to open '%s': %s", ctx.Filename, AvError(int(averr))))
+		if averr := C.avio_open(&ctx.avCtx.pb, cURL, C.AVIO_FLAG_WRITE); averr < 0 {
+			return errors.New(fmt.Sprintf("Unable to open '%s': %s", ctx.URL, AvError(int(averr))))
 		}
 	}
 
 	if averr := C.avformat_write_header(ctx.avCtx, nil); averr < 0 {
-		return errors.New(fmt.Sprintf("Unable to write header to '%s': %s", ctx.Filename, AvError(int(averr))))
+		return errors.New(fmt.Sprintf("Unable to write header to '%s': %s", ctx.URL, AvError(int(averr))))
 	}
 
 	return nil
@@ -302,7 +299,7 @@ func (ctx *FmtCtx) WriteHeader() error {
 
 func (ctx *FmtCtx) WritePacket(p *Packet) error {
 	if averr := C.av_interleaved_write_frame(ctx.avCtx, p.avPacket); averr < 0 {
-		return errors.New(fmt.Sprintf("Unable to write packet to '%s': %s", ctx.Filename, AvError(int(averr))))
+		return errors.New(fmt.Sprintf("Unable to write packet to '%s': %s", ctx.URL, AvError(int(averr))))
 	}
 
 	return nil
@@ -310,7 +307,7 @@ func (ctx *FmtCtx) WritePacket(p *Packet) error {
 
 func (ctx *FmtCtx) WritePacketNoBuffer(p *Packet) error {
 	if averr := C.av_write_frame(ctx.avCtx, p.avPacket); averr < 0 {
-		return errors.New(fmt.Sprintf("Unable to write packet to '%s': %s", ctx.Filename, AvError(int(averr))))
+		return errors.New(fmt.Sprintf("Unable to write packet to '%s': %s", ctx.URL, AvError(int(averr))))
 	}
 
 	return nil
@@ -330,9 +327,9 @@ func (ctx *FmtCtx) SetOformat(ofmt *OutputFmt) error {
 
 func (ctx *FmtCtx) Dump() {
 	if ctx.ofmt == nil {
-		C.av_dump_format(ctx.avCtx, 0, &(ctx.avCtx.filename[0]), 0)
+		C.av_dump_format(ctx.avCtx, 0, ctx.avCtx.url, 0)
 	} else {
-		C.av_dump_format(ctx.avCtx, 0, &(ctx.avCtx.filename[0]), 1)
+		C.av_dump_format(ctx.avCtx, 0, ctx.avCtx.url, 1)
 	}
 }
 
@@ -584,17 +581,17 @@ func (ctx *FmtCtx) GetProbeSize() int64 {
 }
 
 type OutputFmt struct {
-	Filename    string
+	URL         string
 	avOutputFmt *C.struct_AVOutputFormat
 	CgoMemoryManage
 }
 
-func FindOutputFmt(format string, filename string, mime string) *OutputFmt {
+func FindOutputFmt(format string, url string, mime string) *OutputFmt {
 	cformat := C.CString(format)
 	defer C.free(unsafe.Pointer(cformat))
 
-	cfilename := C.CString(filename)
-	defer C.free(unsafe.Pointer(cfilename))
+	cURL := C.CString(url)
+	defer C.free(unsafe.Pointer(cURL))
 
 	cmime := C.CString(mime)
 	defer C.free(unsafe.Pointer(cmime))
@@ -602,14 +599,14 @@ func FindOutputFmt(format string, filename string, mime string) *OutputFmt {
 	var ofmt *C.struct_AVOutputFormat
 
 	if ofmt = C.av_guess_format(cformat, nil, cmime); ofmt == nil {
-		ofmt = C.av_guess_format(nil, cfilename, cmime)
+		ofmt = C.av_guess_format(nil, cURL, cmime)
 	}
 
 	if ofmt == nil {
 		return nil
 	}
 
-	return &OutputFmt{Filename: filename, avOutputFmt: ofmt}
+	return &OutputFmt{URL: url, avOutputFmt: ofmt}
 }
 
 func (f *OutputFmt) Free() {
@@ -629,5 +626,5 @@ func (f *OutputFmt) MimeType() string {
 }
 
 func (f *OutputFmt) Infomation() string {
-	return f.Filename + ":" + f.Name() + "#" + f.LongName() + "#" + f.MimeType()
+	return f.URL + ":" + f.Name() + "#" + f.LongName() + "#" + f.MimeType()
 }

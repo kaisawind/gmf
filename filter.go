@@ -1,10 +1,8 @@
-// +build go1.12
-
 package gmf
 
 /*
 
-#cgo pkg-config: libavfilter
+#cgo pkg-config: libavfilter  libpostproc
 
 #include <stdio.h>
 #include <libavfilter/buffersink.h>

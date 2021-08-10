@@ -1,5 +1,3 @@
-// +build go1.6,!go1.12
-
 package gmf
 
 /*
@@ -49,7 +47,7 @@ const (
 
 type Frame struct {
 	avFrame   *C.struct_AVFrame
-	samples   *_Ctype_uint8_t
+	samples   *C.uint8_t
 	mediaType int32
 	err       error
 	freeData  bool
@@ -70,7 +68,7 @@ func (f *Frame) Encode(enc *CodecCtx) (*Packet, error) {
 	}
 
 	for {
-		ret := int(C.avcodec_receive_packet(enc.avCodecCtx, &pkt.avPacket))
+		ret := int(C.avcodec_receive_packet(enc.avCodecCtx, pkt.avPacket))
 		if AvErrno(ret) == syscall.EAGAIN {
 			return nil, nil
 		}
@@ -94,7 +92,7 @@ func (f *Frame) Unref() {
 }
 
 func (f *Frame) SetPts(val int64) {
-	f.avFrame.pts = (_Ctype_int64_t)(val)
+	f.avFrame.pts = (C.int64_t)(val)
 }
 
 // AVPixelFormat for video frames, AVSampleFormat for audio
@@ -111,7 +109,7 @@ func (f *Frame) Height() int {
 }
 
 func (f *Frame) PktPts() int64 {
-	return int64(f.avFrame.pkt_pts)
+	return int64(f.avFrame.pts)
 }
 
 func (f *Frame) PktPos() int64 {
@@ -119,7 +117,7 @@ func (f *Frame) PktPos() int64 {
 }
 
 func (f *Frame) SetPktPts(val int64) {
-	f.avFrame.pkt_pts = (_Ctype_int64_t)(val)
+	f.avFrame.pts = (C.int64_t)(val)
 }
 
 func (f *Frame) PktDts() int {
@@ -127,7 +125,7 @@ func (f *Frame) PktDts() int {
 }
 
 func (f *Frame) SetPktDts(val int) {
-	f.avFrame.pkt_dts = (_Ctype_int64_t)(val)
+	f.avFrame.pkt_dts = (C.int64_t)(val)
 }
 
 func (f *Frame) KeyFrame() int {
@@ -160,7 +158,7 @@ func (f *Frame) SetHeight(val int) *Frame {
 func (f *Frame) ImgAlloc() error {
 	if ret := int(C.av_image_alloc(
 		(**C.uint8_t)(unsafe.Pointer(&f.avFrame.data)),
-		(*_Ctype_int)(unsafe.Pointer(&f.avFrame.linesize)),
+		(*C.int)(unsafe.Pointer(&f.avFrame.linesize)),
 		C.int(f.Width()), C.int(f.Height()), int32(f.Format()), 32)); ret < 0 {
 		return errors.New(fmt.Sprintf("Unable to allocate raw image buffer: %v", AvError(ret)))
 	}
@@ -185,7 +183,7 @@ func NewAudioFrame(sampleFormat int32, channels, nb_samples int) (*Frame, error)
 		return nil, errors.New("could not get sample buffer size")
 	}
 
-	f.samples = (*_Ctype_uint8_t)(C.av_malloc(C.size_t(size)))
+	f.samples = (*C.uint8_t)(C.av_malloc(C.size_t(size)))
 	if f.samples == nil {
 		return nil, errors.New(fmt.Sprintf("could not allocate %d bytes for samples buffer", size))
 	}
@@ -203,7 +201,7 @@ func NewAudioFrame(sampleFormat int32, channels, nb_samples int) (*Frame, error)
 }
 
 func (f *Frame) SetData(idx int, lineSize int, data int) *Frame {
-	C.gmf_set_frame_data(f.avFrame, C.int(idx), C.int(lineSize), (_Ctype_uint8_t)(data))
+	C.gmf_set_frame_data(f.avFrame, C.int(idx), C.int(lineSize), (C.uint8_t)(data))
 
 	return f
 }
@@ -235,7 +233,7 @@ func (f *Frame) SetNbSamples(val int) *Frame {
 }
 
 func (f *Frame) SetChannelLayout(val int) *Frame {
-	f.avFrame.channel_layout = (_Ctype_uint64_t)(val)
+	f.avFrame.channel_layout = (C.uint64_t)(val)
 	return f
 }
 
@@ -253,8 +251,8 @@ func (f *Frame) SetQuality(val int) *Frame {
 	return f
 }
 
-func (f *Frame) SetPictType(val int32) {
-	f.avFrame.pict_type = uint32(val)
+func (f *Frame) SetPictType(val uint32) {
+	f.avFrame.pict_type = val
 }
 
 func (f *Frame) IsNil() bool {
