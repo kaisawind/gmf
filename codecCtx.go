@@ -272,7 +272,7 @@ func (cc *CodecCtx) Open(dict *Dict) error {
 	return nil
 }
 
-// codec context is freed by avformat_free_context()
+// Free codec context is freed by avformat_free_context()
 func (cc *CodecCtx) Free() {
 	if cc.avCodecCtx != nil {
 		C.avcodec_free_context(&cc.avCodecCtx)
@@ -410,6 +410,10 @@ func (cc *CodecCtx) SetPixFmt(val int32) *CodecCtx {
 func (cc *CodecCtx) SetFlag(flag int) *CodecCtx {
 	cc.avCodecCtx.flags |= C.int(flag)
 	return cc
+}
+
+func (cc *CodecCtx) Flags() int {
+	return int(cc.avCodecCtx.flags)
 }
 
 func (cc *CodecCtx) SetMbDecision(val int) *CodecCtx {

@@ -4,14 +4,6 @@ package gmf
 #cgo pkg-config: libavcodec
 
 #include "libavcodec/avcodec.h"
-
-void shift_data(AVPacket *pkt, int offset) {
-    pkt->data += offset;
-    pkt->size -= offset;
-
-    return;
-}
-
 */
 import "C"
 
@@ -21,7 +13,8 @@ import (
 )
 
 const (
-	AV_PKT_FLAG_KEY = C.AV_PKT_FLAG_KEY // The packet contains a keyframe
+	AV_PKT_FLAG_KEY     = C.AV_PKT_FLAG_KEY     // The packet contains a keyframe
+	AV_PKT_FLAG_CORRUPT = C.AV_PKT_FLAG_CORRUPT // The packet content is corrupted
 )
 
 type Packet struct {
@@ -145,7 +138,18 @@ func (p *Packet) SetStreamIndex(val int) *Packet {
 	return p
 }
 
+// Free Free the packet, if the packet is reference counted, it will be unreferenced first.
 func (p *Packet) Free() {
+	if p.avPacket == nil {
+		return
+	}
+	C.av_packet_free(&p.avPacket)
+}
+
+func (p *Packet) Unref() {
+	if p.avPacket == nil {
+		return
+	}
 	C.av_packet_unref(p.avPacket)
 }
 
