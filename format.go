@@ -180,7 +180,7 @@ func NewOutputCtxWithFormatName(url, format string) (*FmtCtx, error) {
 	return this, nil
 }
 
-// Just a helper for NewCtx().OpenInput()
+// NewInputCtx Just a helper for NewCtx().OpenInput()
 func NewInputCtx(url string) (*FmtCtx, error) {
 	ctx := NewCtx()
 

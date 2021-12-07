@@ -87,15 +87,10 @@ func (cp *CodecParameters) FromContext(cc *CodecCtx) error {
 	return nil
 }
 
-func (cp *CodecParameters) ToContext() (cc *CodecCtx, err error) {
-	cc = &CodecCtx{}
+func (cp *CodecParameters) ToContext(cc *CodecCtx) (err error) {
 	ret := int(C.avcodec_parameters_to_context(cc.avCodecCtx, cp.avCodecParameters))
 	if ret < 0 {
-		return cc, AvError(ret)
-	}
-	cc.codec, err = FindDecoder(cp.CodecId())
-	if err != nil {
-		return
+		return AvError(ret)
 	}
 	return
 }
