@@ -51,8 +51,7 @@ func Example() {
 	if err = videoEncCtx.Open(nil); err != nil {
 		log.Fatal(err)
 	}
-	videoStream.DumpContexCodec(videoEncCtx)
-	// videoStream.SetCodecCtx(videoEncCtx)
+	videoStream.DumpContextCodec(videoEncCtx)
 
 	outputCtx.SetStartTime(0)
 

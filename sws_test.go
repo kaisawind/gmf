@@ -46,7 +46,7 @@ func TestScale(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	videoStream.DumpContexCodec(dstCodecCtx)
+	videoStream.DumpContextCodec(dstCodecCtx)
 	swsCtx, err := gmf.NewSwsCtx(srcEncCtx.Width(), srcEncCtx.Height(), srcEncCtx.PixFmt(), dstCodecCtx.Width(), dstCodecCtx.Height(), dstCodecCtx.PixFmt(), gmf.SWS_BICUBIC)
 	if err != nil {
 		t.Fatal(err)

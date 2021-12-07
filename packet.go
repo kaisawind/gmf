@@ -88,10 +88,6 @@ func (p *Packet) Data() []byte {
 }
 
 // SetData [NOT SUGGESTED] should free data later
-//   p := gmf.NewPacket()
-//   defer p.Free()
-//   p.SetData([]byte{0x00, 0x00, 0x00, 0x01, 0x67})
-//   defer p.FreeData()
 func (p *Packet) SetData(data []byte) *Packet {
 	p.avPacket.size = C.int(len(data))
 	p.avPacket.data = (*C.uint8_t)(C.CBytes(data))
@@ -99,10 +95,6 @@ func (p *Packet) SetData(data []byte) *Packet {
 }
 
 // FreeData free data when use SetData
-//   p := gmf.NewPacket()
-//   defer p.Free()
-//   p.SetData([]byte{0x00, 0x00, 0x00, 0x01, 0x67})
-//   defer p.FreeData()
 func (p *Packet) FreeData() *Packet {
 	if p.avPacket.data != nil {
 		C.free(unsafe.Pointer(p.avPacket.data))
@@ -112,7 +104,7 @@ func (p *Packet) FreeData() *Packet {
 	return p
 }
 
-func (p *Packet) Clone() *Packet {
+func (p *Packet) Ref() *Packet {
 	np := NewPacket()
 	if np == nil {
 		return np
@@ -127,7 +119,7 @@ func (p *Packet) Clone() *Packet {
 
 func (p *Packet) Dump() {
 	if p.avPacket != nil {
-		fmt.Printf("idx: %d\npts: %d\ndts: %d\nsize: %d\nduration:%d\npos:%d\ndata: % x\n", p.StreamIndex(), p.avPacket.pts, p.avPacket.dts, p.avPacket.size, p.avPacket.duration, p.avPacket.pos, C.GoBytes(unsafe.Pointer(p.avPacket.data), 128))
+		fmt.Printf("idx: %d\npts: %d\ndts: %d\nsize: %d\nduration:%d\npos:%d\ndata: % x\n", p.StreamIndex(), p.Pts(), p.Dts(), p.Size(), p.Duration(), p.Pos(), C.GoBytes(unsafe.Pointer(p.avPacket.data), 128))
 		fmt.Println("------------------------------")
 	}
 

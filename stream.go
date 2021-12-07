@@ -19,10 +19,7 @@ type Stream struct {
 	SwsCtx   *SwsCtx
 	SwrCtx   *SwrCtx
 	AvFifo   *AVAudioFifo
-	// Deprecated: Using AVStream.codec to pass codec parameters to muxers is deprecated, use AVStream.codecpar instead.
-	cc  *CodecCtx
-	Pts int64
-	CgoMemoryManage
+	Pts      int64
 }
 
 func (s *Stream) Free() {
@@ -37,7 +34,7 @@ func (s *Stream) Free() {
 	}
 }
 
-func (s *Stream) DumpContexCodec(codec *CodecCtx) {
+func (s *Stream) DumpContextCodec(codec *CodecCtx) {
 	ret := C.avcodec_parameters_from_context(s.avStream.codecpar, codec.avCodecCtx)
 	if ret < 0 {
 		panic("Failed to copy context from input to output stream codec context\n")
@@ -46,44 +43,6 @@ func (s *Stream) DumpContexCodec(codec *CodecCtx) {
 
 func (s *Stream) SetCodecFlags() {
 	s.avStream.codec.flags |= C.AV_CODEC_FLAG_GLOBAL_HEADER
-}
-
-// CodecCtx
-// Deprecated: Using AVStream.codec to pass codec parameters to muxers is deprecated, use AVStream.codecpar instead.
-func (s *Stream) CodecCtx() *CodecCtx {
-	// Supposed that output context is set and opened by user
-	if s.IsCodecCtxSet() {
-		return s.cc
-	}
-
-	// Open input codec context
-	c, err := FindDecoder(int(s.avStream.codec.codec_id))
-	if err != nil {
-		return nil
-	}
-
-	if s.cc = NewCodecCtx(c); s.cc == nil {
-		panic("error allocating codec context")
-	}
-
-	ret := int(C.avcodec_parameters_to_context(s.cc.avCodecCtx, s.avStream.codecpar))
-	if ret < 0 {
-		panic("error copying parameters to codec context")
-	}
-
-	if err := s.cc.Open(nil); err != nil {
-		panic("error opening codec context")
-	}
-
-	s.cc.avCodecCtx.time_base = s.avStream.codec.time_base
-
-	return s.cc
-}
-
-// SetCodecCtx
-// Deprecated: Using AVStream.codec to pass codec parameters to muxers is deprecated, use AVStream.codecpar instead.
-func (s *Stream) SetCodecCtx(cc *CodecCtx) {
-	s.cc = cc
 }
 
 func (s *Stream) CodecPar() *CodecParameters {
@@ -102,12 +61,6 @@ func (s *Stream) SetCodecPar(cp *CodecParameters) error {
 
 	s.avStream.codecpar = cp.avCodecParameters
 	return nil
-}
-
-// IsCodecCtxSet
-// Deprecated: Using AVStream.codec to pass codec parameters to muxers is deprecated, use AVStream.codecpar instead.
-func (s *Stream) IsCodecCtxSet() bool {
-	return s.cc != nil
 }
 
 func (s *Stream) Index() int {
@@ -188,4 +141,17 @@ func (s *Stream) CopyCodecPar(cp *CodecParameters) error {
 	}
 
 	return nil
+}
+
+func (s *Stream) ToContext() (cc *CodecCtx, err error) {
+	cc = &CodecCtx{}
+	ret := int(C.avcodec_parameters_to_context(cc.avCodecCtx, s.avStream.codecpar))
+	if ret < 0 {
+		return cc, AvError(ret)
+	}
+	cc.codec, err = FindDecoder(s.CodecPar().CodecId())
+	if err != nil {
+		return
+	}
+	return
 }

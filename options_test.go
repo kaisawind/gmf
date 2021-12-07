@@ -17,7 +17,7 @@ func TestOptionSet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Release(cc)
+	defer cc.Free()
 
 	d := NewDict([]Pair{{"refcounted_frames", "1"}})
 	cc2 := NewCodecCtx(codec, []*Option{{"dict", d}})
@@ -25,7 +25,7 @@ func TestOptionSet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Release(cc2)
+	defer cc2.Free()
 
 	octx, err := NewOutputCtx(FindOutputFmt("hls", "file.hls", ""))
 	if err != nil {

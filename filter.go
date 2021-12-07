@@ -66,7 +66,7 @@ func NewFilter(desc string, srcStreams []*Stream, ost *Stream, options []*Option
 
 		src := srcStreams[i]
 
-		args = fmt.Sprintf("video_size=%s:pix_fmt=%d:time_base=%s:pixel_aspect=%s:sws_param=flags=%d:frame_rate=%s", src.CodecCtx().GetVideoSize(), src.CodecCtx().PixFmt(), src.TimeBase().AVR(), src.CodecCtx().GetAspectRation().AVR(), SWS_BILINEAR, src.GetRFrameRate().AVR().String())
+		args = fmt.Sprintf("video_size=%s:pix_fmt=%d:time_base=%s:pixel_aspect=%s:sws_param=flags=%d:frame_rate=%s", src.CodecPar().GetVideoSize(), src.CodecPar().Format(), src.TimeBase().AVR(), src.CodecPar().GetAspectRation().AVR(), SWS_BILINEAR, src.GetRFrameRate().AVR().String())
 
 		if last, ret = f.create("buffer", fmt.Sprintf("in_%d", i), args); ret < 0 {
 			return f, fmt.Errorf("error creating input buffer - %s", AvError(ret))

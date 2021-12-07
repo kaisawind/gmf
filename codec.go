@@ -114,7 +114,6 @@ var (
 
 type Codec struct {
 	avCodec *C.struct_AVCodec
-	CgoMemoryManage
 	decoder bool
 }
 
@@ -170,30 +169,30 @@ func FindEncoder(i interface{}) (*Codec, error) {
 	return &Codec{avCodec: avc}, nil
 }
 
-func (this *Codec) Free() {
+func (c *Codec) Free() {
 }
-func (this *Codec) Id() int {
-	return int(this.avCodec.id)
-}
-
-func (this *Codec) Name() string {
-	return C.GoString(this.avCodec.name)
+func (c *Codec) Id() int {
+	return int(c.avCodec.id)
 }
 
-func (this *Codec) LongName() string {
-	return C.GoString(this.avCodec.long_name)
+func (c *Codec) Name() string {
+	return C.GoString(c.avCodec.name)
 }
 
-func (this *Codec) Type() int {
+func (c *Codec) LongName() string {
+	return C.GoString(c.avCodec.long_name)
+}
+
+func (c *Codec) Type() int {
 	// > ...field names that are keywords in Go can be
 	// > accessed by prefixing them with an underscore
-	return int(this.avCodec._type)
+	return int(c.avCodec._type)
 }
 
-func (this *Codec) IsExperimental() bool {
-	return bool((this.avCodec.capabilities & C.AV_CODEC_CAP_EXPERIMENTAL) != 0)
+func (c *Codec) IsExperimental() bool {
+	return (c.avCodec.capabilities & C.AV_CODEC_CAP_EXPERIMENTAL) != 0
 }
 
-func (this *Codec) IsDecoder() bool {
-	return this.decoder
+func (c *Codec) IsDecoder() bool {
+	return c.decoder
 }

@@ -35,10 +35,10 @@ func TestStream(t *testing.T) {
 
 	st := assert(ctx.GetStream(0)).(*gmf.Stream)
 
-	st.DumpContexCodec(cc)
+	st.DumpContextCodec(cc)
 
 	if cc.Height() != td.height || cc.Width() != td.width {
-		t.Fatalf("Expected dimension = %dx%d, %dx%d got\n", td.width, td.height, st.CodecCtx().Width(), st.CodecCtx().Height())
+		t.Fatalf("Expected dimension = %dx%d, %dx%d got\n", td.width, td.height, st.CodecPar().Width(), st.CodecPar().Height())
 	}
 
 	ctx.Free()
@@ -55,10 +55,10 @@ func TestStreamInputCtx(t *testing.T) {
 	ist := assert(inputCtx.GetStream(0)).(*gmf.Stream)
 
 	if ist.CodecPar().Width() != inputSampleWidth || ist.CodecPar().Height() != inputSampleHeight {
-		t.Fatalf("Expected dimension = %dx%d, %dx%d got\n", inputSampleWidth, inputSampleHeight, ist.CodecCtx().Width(), ist.CodecCtx().Height())
+		t.Fatalf("Expected dimension = %dx%d, %dx%d got\n", inputSampleWidth, inputSampleHeight, ist.CodecPar().Width(), ist.CodecPar().Height())
 	}
 
-	log.Printf("Input stream is OK, cnt: %d, %dx%d\n", inputCtx.StreamsCnt(), ist.CodecCtx().Width(), ist.CodecCtx().Height())
+	log.Printf("Input stream is OK, cnt: %d, %dx%d\n", inputCtx.StreamsCnt(), ist.CodecPar().Width(), ist.CodecPar().Height())
 
 	inputCtx.Free()
 }

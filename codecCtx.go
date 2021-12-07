@@ -173,23 +173,20 @@ var (
 	}
 )
 
-type avBprint C.struct_AVBprint
-
 type CodecCtx struct {
 	codec      *Codec
 	avCodecCtx *C.struct_AVCodecContext
-	CgoMemoryManage
 }
 
 func NewCodecCtx(codec *Codec, options ...[]*Option) *CodecCtx {
 	result := &CodecCtx{codec: codec}
 
-	codecctx := C.avcodec_alloc_context3(codec.avCodec)
-	if codecctx == nil {
+	cc := C.avcodec_alloc_context3(codec.avCodec)
+	if cc == nil {
 		return nil
 	}
 
-	result.avCodecCtx = codecctx
+	result.avCodecCtx = cc
 
 	// we're really expecting only one options-array —
 	// variadic arg is used for backward compatibility
@@ -200,7 +197,6 @@ func NewCodecCtx(codec *Codec, options ...[]*Option) *CodecCtx {
 	}
 
 	result.avCodecCtx.codec_id = codec.avCodec.id
-
 	return result
 }
 
@@ -210,37 +206,17 @@ func (cc *CodecCtx) SetOptions(options []Option) {
 	}
 }
 
-func (cc *CodecCtx) CopyExtra(ist *Stream) *CodecCtx {
-	codec := cc.avCodecCtx
-	icodec := ist.CodecCtx().avCodecCtx
-
-	codec.bits_per_raw_sample = icodec.bits_per_raw_sample
-	codec.chroma_sample_location = icodec.chroma_sample_location
-
-	codec.codec_id = icodec.codec_id
-	codec.codec_type = icodec.codec_type
-
-	// codec.codec_tag = icodec.codec_tag
-
-	codec.rc_max_rate = icodec.rc_max_rate
-	codec.rc_buffer_size = icodec.rc_buffer_size
-
-	codec.field_order = icodec.field_order
-
-	codec.extradata = (*C.uint8_t)(C.av_mallocz((C.size_t)((C.uint64_t)(icodec.extradata_size) + C.AV_INPUT_BUFFER_PADDING_SIZE)))
-
-	C.memcpy(unsafe.Pointer(codec.extradata), unsafe.Pointer(icodec.extradata), (C.size_t)(icodec.extradata_size))
-	codec.extradata_size = icodec.extradata_size
-	codec.bits_per_coded_sample = icodec.bits_per_coded_sample
-
-	codec.has_b_frames = icodec.has_b_frames
-
-	return cc
+func (cc *CodecCtx) CopyExtra(ist *Stream) (err error) {
+	ret := int(C.avcodec_parameters_to_context(cc.avCodecCtx, ist.avStream.codecpar))
+	if ret < 0 {
+		return AvError(ret)
+	}
+	return
 }
 
-// SetExtradata TODO: Improving performance
+// SetExtraData TODO: Improving performance
 //   Free or avcodec_free_context can free extradata
-func (cc *CodecCtx) SetExtradata(extradata []byte) *CodecCtx {
+func (cc *CodecCtx) SetExtraData(extradata []byte) *CodecCtx {
 	codec := cc.avCodecCtx
 	codec.extradata_size = C.int(len(extradata))
 	codec.extradata = (*C.uint8_t)(C.av_mallocz((C.size_t)((C.uint64_t)(len(extradata)) + C.AV_INPUT_BUFFER_PADDING_SIZE)))
@@ -287,7 +263,7 @@ func (cc *CodecCtx) Close() {
 	C.avcodec_close(cc.avCodecCtx)
 }
 
-// @todo
+// SetOpt @todo
 func (cc *CodecCtx) SetOpt() {
 	// mock
 	C.av_opt_set_int(unsafe.Pointer(cc.avCodecCtx), C.CString("refcounted_frames"), 1, 0)

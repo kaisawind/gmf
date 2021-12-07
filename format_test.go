@@ -107,7 +107,7 @@ func TestWriteHeader(t *testing.T) {
 	defer stream.Free()
 	cc := gmf.NewCodecCtx(c).SetTimeBase(gmf.AVR{Num: 1, Den: 25}).SetDimension(10, 10).SetFlag(gmf.CODEC_FLAG_GLOBAL_HEADER)
 	defer cc.Free()
-	stream.DumpContexCodec(cc)
+	stream.DumpContextCodec(cc)
 	// stream.SetCodecCtx(cc)
 
 	if err := outputCtx.WriteHeader(); err != nil {

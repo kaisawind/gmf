@@ -96,7 +96,7 @@ func LogSetLevel(level int) {
 	C.av_log_set_level(C.int(level))
 }
 
-// @todo start_time is it needed?
+// NewCtx @todo start_time is it needed?
 func NewCtx(options ...[]Option) *FmtCtx {
 	ctx := &FmtCtx{
 		avCtx:    C.avformat_alloc_context(),
@@ -259,7 +259,7 @@ func (ctx *FmtCtx) AddStreamWithCodeCtx(codeCtx *CodecCtx) (*Stream, error) {
 		return nil, fmt.Errorf("unable to create stream in context, filename: %s", ctx.URL)
 	}
 
-	ost.DumpContexCodec(codeCtx)
+	ost.DumpContextCodec(codeCtx)
 
 	if ctx.avCtx.oformat != nil && int(ctx.avCtx.oformat.flags&C.AVFMT_GLOBALHEADER) > 0 {
 		ost.SetCodecFlags()
@@ -388,17 +388,15 @@ func (ctx *FmtCtx) NewStream(c *Codec) *Stream {
 		avCodec = c.avCodec
 	}
 
-	if st := C.avformat_new_stream(ctx.avCtx, avCodec); st == nil {
+	st := C.avformat_new_stream(ctx.avCtx, avCodec)
+	if st == nil {
 		return nil
-	} else {
-		ctx.streams[int(st.index)] = &Stream{avStream: st}
-		Retain(ctx.streams[int(st.index)])
-		return ctx.streams[int(st.index)]
 	}
-
+	ctx.streams[int(st.index)] = &Stream{avStream: st}
+	return ctx.streams[int(st.index)]
 }
 
-// Original structure member is called instead of len(this.streams)
+// StreamsCnt Original structure member is called instead of len(this.streams)
 // because there is no initialized Stream wrappers in input context.
 func (ctx *FmtCtx) StreamsCnt() int {
 	return int(ctx.avCtx.nb_streams)
@@ -490,7 +488,7 @@ func (ctx *FmtCtx) Duration() float64 {
 	return float64(ctx.avCtx.duration) / float64(AV_TIME_BASE)
 }
 
-// Total stream bitrate in bit/s
+// BitRate Total stream bitrate in bit/s
 func (ctx *FmtCtx) BitRate() int64 {
 	return int64(ctx.avCtx.bit_rate)
 }
@@ -523,23 +521,6 @@ func (ctx *FmtCtx) SeekFile(ist *Stream, minTs, maxTs int64, flag int) error {
 	if ret := int(C.avformat_seek_file(ctx.avCtx, C.int(ist.Index()), C.int64_t(0), C.int64_t(minTs), C.int64_t(maxTs), C.int(flag))); ret < 0 {
 		return errors.New(fmt.Sprintf("Error creating output context: %s", AvError(ret)))
 	}
-
-	return nil
-}
-
-func (ctx *FmtCtx) SeekFrameAt(sec int64, streamIndex int) error {
-	ist, err := ctx.GetStream(streamIndex)
-	if err != nil {
-		return err
-	}
-
-	frameTs := Rescale(sec*1000, int64(ist.TimeBase().AVR().Den), int64(ist.TimeBase().AVR().Num)) / 1000
-
-	if err := ctx.SeekFile(ist, frameTs, frameTs, C.AVSEEK_FLAG_FRAME); err != nil {
-		return err
-	}
-
-	ist.CodecCtx().FlushBuffers()
 
 	return nil
 }
