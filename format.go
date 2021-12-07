@@ -564,7 +564,6 @@ func (ctx *FmtCtx) GetProbeSize() int64 {
 type OutputFmt struct {
 	URL         string
 	avOutputFmt *C.struct_AVOutputFormat
-	CgoMemoryManage
 }
 
 func FindOutputFmt(format string, url string, mime string) *OutputFmt {

@@ -65,32 +65,32 @@ func NewAVAudioFifo(sampleFormat int32, channels int, nb_samples int) *AVAudioFi
 	}
 }
 
-func (this *AVAudioFifo) SamplesToRead() int {
-	return int(C.av_audio_fifo_size(this.avAudioFifo))
+func (af *AVAudioFifo) SamplesToRead() int {
+	return int(C.av_audio_fifo_size(af.avAudioFifo))
 }
 
-func (this *AVAudioFifo) SamplesCanWrite() int {
-	return int(C.av_audio_fifo_space(this.avAudioFifo))
+func (af *AVAudioFifo) SamplesCanWrite() int {
+	return int(C.av_audio_fifo_space(af.avAudioFifo))
 }
 
-func (this *AVAudioFifo) Write(frame *Frame) int {
-	return int(C.write_fifo(this.avAudioFifo, frame.avFrame, C.int(frame.NbSamples())))
+func (af *AVAudioFifo) Write(frame *Frame) int {
+	return int(C.write_fifo(af.avAudioFifo, frame.avFrame, C.int(frame.NbSamples())))
 }
 
-func (this *AVAudioFifo) Read(sampleCount int) *Frame {
-	rsize := this.SamplesToRead()
+func (af *AVAudioFifo) Read(sampleCount int) *Frame {
+	rsize := af.SamplesToRead()
 	size := rsize
 
 	if sampleCount <= rsize {
 		size = sampleCount
 	}
 
-	frame, err := NewAudioFrame(this.sampleFormat, this.channels, size)
+	frame, err := NewAudioFrame(af.sampleFormat, af.channels, size)
 	if frame == nil || err != nil {
 		return nil
 	}
 
-	if int(C.read_fifo(this.avAudioFifo, frame.avFrame, C.int(size))) == size {
+	if int(C.read_fifo(af.avAudioFifo, frame.avFrame, C.int(size))) == size {
 		return frame
 	}
 
@@ -98,6 +98,6 @@ func (this *AVAudioFifo) Read(sampleCount int) *Frame {
 	return nil
 }
 
-func (this *AVAudioFifo) Free() {
-	C.av_audio_fifo_free(this.avAudioFifo)
+func (af *AVAudioFifo) Free() {
+	C.av_audio_fifo_free(af.avAudioFifo)
 }

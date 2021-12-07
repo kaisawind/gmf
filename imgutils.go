@@ -59,10 +59,9 @@ type Image struct {
 	pixFmt     int32
 	width      int
 	height     int
-	CgoMemoryManage
 }
 
-// @todo find better way to do allocation
+// NewImage @todo find better way to do allocation
 func NewImage(w, h int, pixFmt int32, align int) (*Image, error) {
 	image := &Image{
 		avPointers: C.alloc_uint4(), // allocate uint8_t *pointers[4]

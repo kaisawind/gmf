@@ -35,7 +35,7 @@ var (
 	IO_BUFFER_SIZE int = 32768
 )
 
-// Functions prototypes for custom IO. Implement necessary prototypes and pass instance pointer to NewAVIOContext.
+// AVIOHandlers Functions prototypes for custom IO. Implement necessary prototypes and pass instance pointer to NewAVIOContext.
 //
 // E.g.:
 // 	func gridFsReader() ([]byte, int) {
@@ -58,11 +58,10 @@ type AVIOContext struct {
 	avAVIOContext *C.AVIOContext
 	// avAVIOContext *C.struct_AVIOContext
 	handlerKey uintptr
-	CgoMemoryManage
-	buffer *C.uchar
+	buffer     *C.uchar
 }
 
-// AVIOContext constructor. Use it only if You need custom IO behaviour!
+// NewAVIOContext constructor. Use it only if You need custom IO behaviour!
 func NewAVIOContext(ctx *FmtCtx, handlers *AVIOHandlers, size ...int) (*AVIOContext, error) {
 	this := &AVIOContext{}
 
