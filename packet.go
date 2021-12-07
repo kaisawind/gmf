@@ -24,7 +24,13 @@ type Packet struct {
 func NewPacket() *Packet {
 	p := &Packet{}
 
-	C.av_new_packet(&p.avPacket, 0)
+	p.avPacket = C.av_packet_alloc()
+	if p.avPacket == nil {
+		return nil
+	}
+
+	p.avPacket.data = nil
+	p.avPacket.size = 0
 
 	return p
 }
@@ -36,7 +42,7 @@ func NewPacket() *Packet {
 func Init() *Packet {
 	p := &Packet{}
 
-	C.av_new_packet(&p.avPacket, 0)
+	C.av_new_packet(p.avPacket, 0)
 
 	return p
 }
