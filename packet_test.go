@@ -16,7 +16,7 @@ func TestFramesIterator(t *testing.T) {
 	cnt := 0
 	ist := assert(inputCtx.GetStream(0)).(*gmf.Stream)
 	par := ist.CodecPar()
-	for frame := range gmf.GenSyntVideoNewFrame(par.Width(), par.Height(), par.Format()) {
+	for frame := range SyntheticVideoNewFrame(par.Width(), par.Height(), par.Format()) {
 		cnt++
 		frame.Free()
 	}

@@ -140,7 +140,7 @@ func main() {
 	var srcFrame *Frame
 	j := int64(0)
 
-	for srcFrame = range GenSyntVideoNewFrame(320, 200, AV_PIX_FMT_YUV420P) {
+	for srcFrame = range SyntheticVideoNewFrame(320, 200, AV_PIX_FMT_YUV420P) {
 		srcFrame.SetPts(j)
 		for i := 0; i < wCount; i++ {
 			Retain(srcFrame)

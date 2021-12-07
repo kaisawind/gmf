@@ -80,7 +80,7 @@ func main() {
 	var frame *Frame
 
 	i := int64(0)
-	for frame = range GenSyntVideoNewFrame(srcWidth, srcHeight, srcEncCtx.PixFmt()) {
+	for frame = range SyntheticVideoNewFrame(srcWidth, srcHeight, srcEncCtx.PixFmt()) {
 		frame.SetPts(i)
 
 		swsCtx.Scale(frame, dstFrame)

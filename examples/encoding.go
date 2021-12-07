@@ -67,7 +67,7 @@ func main() {
 	i := int64(0)
 	n := 0
 
-	for frame = range GenSyntVideoNewFrame(videoEncCtx.Width(), videoEncCtx.Height(), videoEncCtx.PixFmt()) {
+	for frame = range SyntheticVideoNewFrame(videoEncCtx.Width(), videoEncCtx.Height(), videoEncCtx.PixFmt()) {
 		frame.SetPts(i)
 
 		if p, err := frame.Encode(videoStream.CodecCtx()); p != nil {

@@ -62,7 +62,7 @@ func TestScale(t *testing.T) {
 
 	var frame *gmf.Frame
 
-	for frame = range gmf.GenSyntVideoNewFrame(srcWidth, srcHeight, srcEncCtx.PixFmt()) {
+	for frame = range SyntheticVideoNewFrame(srcWidth, srcHeight, srcEncCtx.PixFmt()) {
 		frame.SetPts(0)
 
 		swsCtx.Scale(frame, dstFrame)

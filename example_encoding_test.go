@@ -9,7 +9,7 @@ import (
 )
 
 func Example() {
-	outputfilename := "examples/sample-encoding1.mpg"
+	oFilename := "examples/sample-encoding1.mpg"
 	dstWidth, dstHeight := 640, 480
 
 	codec, err := gmf.FindEncoder(gmf.AV_CODEC_ID_MPEG1VIDEO)
@@ -23,7 +23,7 @@ func Example() {
 	}
 	defer videoEncCtx.Free()
 
-	outputCtx, err := gmf.NewOutputCtx(outputfilename)
+	outputCtx, err := gmf.NewOutputCtx(oFilename)
 	if err != nil {
 		log.Fatal(errors.New("failed to create a new output context"))
 	}
@@ -62,7 +62,7 @@ func Example() {
 	i := int64(0)
 	n := 0
 
-	for frame := range gmf.GenSyntVideoNewFrame(videoEncCtx.Width(), videoEncCtx.Height(), videoEncCtx.PixFmt()) {
+	for frame := range SyntheticVideoNewFrame(videoEncCtx.Width(), videoEncCtx.Height(), videoEncCtx.PixFmt()) {
 		frame.SetPts(i)
 
 		if p, err := frame.Encode(videoEncCtx); p != nil {
