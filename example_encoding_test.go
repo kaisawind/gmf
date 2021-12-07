@@ -8,7 +8,7 @@ import (
 	"github.com/3d0c/gmf"
 )
 
-func Example() {
+func Example_encoding() {
 	oFilename := "examples/sample-encoding1.mpg"
 	dstWidth, dstHeight := 640, 480
 
@@ -23,11 +23,11 @@ func Example() {
 	}
 	defer videoEncCtx.Free()
 
-	outputCtx, err := gmf.NewOutputCtx(oFilename)
+	oCtx, err := gmf.NewOutputCtx(oFilename)
 	if err != nil {
 		log.Fatal(errors.New("failed to create a new output context"))
 	}
-	defer outputCtx.Free()
+	defer oCtx.Free()
 
 	videoEncCtx.
 		SetBitRate(400000).
@@ -38,55 +38,53 @@ func Example() {
 		SetProfile(gmf.FF_PROFILE_MPEG4_SIMPLE).
 		SetMbDecision(gmf.FF_MB_DECISION_RD)
 
-	if outputCtx.IsGlobalHeader() {
+	if oCtx.IsGlobalHeader() {
 		videoEncCtx.SetFlag(gmf.CODEC_FLAG_GLOBAL_HEADER)
 	}
 
-	videoStream := outputCtx.NewStream(codec)
-	if videoStream == nil {
+	s := oCtx.NewStream(codec)
+	if s == nil {
 		log.Fatal(errors.New(fmt.Sprintf("Unable to create stream for videoEnc [%s]\n", codec.LongName())))
 	}
-	defer videoStream.Free()
+	defer s.Free()
 
 	if err = videoEncCtx.Open(nil); err != nil {
 		log.Fatal(err)
 	}
-	videoStream.DumpContextCodec(videoEncCtx)
+	s.DumpContextCodec(videoEncCtx)
 
-	outputCtx.SetStartTime(0)
+	oCtx.SetStartTime(0)
 
-	if err = outputCtx.WriteHeader(); err != nil {
+	if err = oCtx.WriteHeader(); err != nil {
 		log.Fatal(err)
 	}
-	outputCtx.Dump()
-	i := int64(0)
-	n := 0
+	oCtx.Dump()
 
+	var p *gmf.Packet
+	i := int64(0)
 	for frame := range SyntheticVideoNewFrame(videoEncCtx.Width(), videoEncCtx.Height(), videoEncCtx.PixFmt()) {
 		frame.SetPts(i)
 
-		if p, err := frame.Encode(videoEncCtx); p != nil {
+		p, err = frame.Encode(videoEncCtx)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if p != nil {
 			if p.Pts() != gmf.AV_NOPTS_VALUE {
-				p.SetPts(gmf.RescaleQ(p.Pts(), videoEncCtx.TimeBase(), videoStream.TimeBase()))
+				p.SetPts(gmf.RescaleQ(p.Pts(), videoEncCtx.TimeBase(), s.TimeBase()))
 			}
 
 			if p.Dts() != gmf.AV_NOPTS_VALUE {
-				p.SetDts(gmf.RescaleQ(p.Dts(), videoEncCtx.TimeBase(), videoStream.TimeBase()))
+				p.SetDts(gmf.RescaleQ(p.Dts(), videoEncCtx.TimeBase(), s.TimeBase()))
 			}
 
-			if err := outputCtx.WritePacket(p); err != nil {
+			err = oCtx.WritePacket(p)
+			if err != nil {
 				log.Fatal(err)
 			}
-
-			n++
-
 			log.Printf("Write frame=%d size=%v pts=%v dts=%v\n", frame.Pts(), p.Size(), p.Pts(), p.Dts())
-
 			p.Free()
-		} else if err != nil {
-			log.Fatal(err)
 		}
-
 		frame.Free()
 		i++
 	}

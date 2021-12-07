@@ -81,7 +81,6 @@ func AvErrno(ret int) syscall.Errno {
 	if ret < 0 {
 		ret = -ret
 	}
-
 	return syscall.Errno(ret)
 }
 
